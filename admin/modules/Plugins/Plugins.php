@@ -47,16 +47,22 @@ class Plugins extends CodonModule   {
             // add to the $files array
             if ($file != '.' && $file != '..')
             {
-                $info = file('modules/Plugins/uploads/'.$file.'/config.txt');
-                
-                foreach($info as $line)
+                if(file_exists('modules/Plugins/uploads/'.$file.'/config.txt'))
                 {
-                    $data = explode('=', $line);
-                    $config->$data[0] = trim($data[1]);
-                }    
-                
-                $config->file = $file;
-                
+                    $info = file('modules/Plugins/uploads/'.$file.'/config.txt');
+                    
+                    foreach($info as $line)
+                        {
+                            $data = explode('=', $line);
+                            $config->$data[0] = trim($data[1]);
+                        }    
+
+                        $config->file = $file;
+                }
+                else
+                {
+                    $config->file = $file;
+                }
                 
                 $plugins[]=$config; 
             }   
@@ -67,6 +73,7 @@ class Plugins extends CodonModule   {
         $this->set('plugins', $plugins);
         $this->show('plugins/header');
         $this->show('plugins/uploaded');
+        $this->show('plugins/footer');
     }
     
     public function get_plugin($plugin) {
@@ -90,6 +97,7 @@ class Plugins extends CodonModule   {
         $this->set('path', 'modules/Plugins/uploads/'.$plugin.'/');
         $this->show('plugins/header');
         $this->show('plugins/plugin');
+        $this->show('plugins/footer');
     }
     
     function ls($pattern="*", $folder="", $recursivly="", $options=array('return_files','return_folders')) {
@@ -422,6 +430,7 @@ class Plugins extends CodonModule   {
        $this->set('status', $status);
        $this->show('plugins/header');
        $this->show('plugins/result');
+       $this->show('plugins/footer');
     }
     
     //send failure message to developer
@@ -433,6 +442,7 @@ class Plugins extends CodonModule   {
         Util::SendEmail($this->post->to, $this->post->subject, $message, SITE_NAME, ADMIN_EMAIL);
         $this->show('plugins/header');
         $this->show('plugins/message_sent');
+        $this->show('plugins/footer');
     }
     
     //remove plugin from system
@@ -488,12 +498,14 @@ class Plugins extends CodonModule   {
         $this->set('messages', $messages);
         $this->show('plugins/header');
         $this->show('plugins/uninstall');
+        $this->show('plugins/footer');
         
     }
     
     public function upload()    {
         $this->show('plugins/header');
         $this->show('plugins/upload_form');
+        $this->show('plugins/footer');
     }
     
     protected function save_upload() {
@@ -512,29 +524,45 @@ class Plugins extends CodonModule   {
 		} 
 	}
  
-	$continue = strtolower($name[1]) == 'zip' ? true : false;
-	if(!$continue) {
-		$message = "The file you are trying to upload is not a .zip file. Please try again.";
+	if(strtolower(substr($filename, -3)) != 'zip') {
+            $this->show('plugins/header');
+            $this->show('plugins/upload_badextension');
+            $this->show('plugins/footer');
 	}
- 
-	$target_path = "modules/Plugins/uploads/".$filename;  // change this to the correct site path
-	if(move_uploaded_file($source, $target_path)) {
-		$zip = new ZipArchive();
-		$x = $zip->open($target_path);
-		if ($x === true) {
-			$zip->extractTo("modules/Plugins/uploads/"); // change this to the correct site path
-			$zip->close();
- 
-			unlink($target_path);
-		}
-		$this->show('plugins/header');
-                $this->show('plugins/upload_success');
-	}
-        else 
-        {	
-		echo "There was a problem with the upload. Please try again.";
-	}
+        else
+        {
+            $target_path = "modules/Plugins/uploads/".$filename;
+            //check if plugin already exists
+            if(file_exists("modules/Plugins/uploads/".substr($filename, 0, -4)))
+            {
+                $this->show('plugins/header');
+                $this->show('plugins/upload_alreadyexists');
+                $this->show('plugins/footer');
+            }
+            else
+            {
+                if(move_uploaded_file($source, $target_path)) {
+                    $zip = new ZipArchive();
+                    $x = $zip->open($target_path);
+                    if ($x === true) {
+                            $zip->extractTo("modules/Plugins/uploads/");
+                            $zip->close();
 
+                            unlink($target_path);
+                    }
+                    $this->show('plugins/header');
+                    $this->show('plugins/upload_success');
+                    $this->show('plugins/footer');
+                }
+                else 
+                {	
+                    $this->show('plugins/header');    
+                    $this->show('plugins/upload_error');
+                    $this->show('plugins/footer');
+                }
+
+            }
+        }
         }
 
         }
@@ -542,7 +570,8 @@ class Plugins extends CodonModule   {
         public function delete($dir) {
             $directory = 'modules/Plugins/uploads/'.$dir.'/';
             $this->rrdir($directory);
-            $this->uploaded();
+            $this->index();
+
         }
         
         public function rrdir($dir) { 
@@ -569,7 +598,7 @@ class Plugins extends CodonModule   {
                 }
         }
 
-        //From phpVMS install script
+        //Function from phpVMS install script
         function readSQLFile($file_name, $table_prefix = '') {
 
         $sqlLines = array();

@@ -13,7 +13,7 @@
 <form action="<?php echo SITE_URL?>/admin/index.php/plugins" method="post" enctype="multipart/form-data">
                 <p>
                     <label for="file">Plugin to upload:</label><br />
-                    <input type="file" name="zip_file" />
+                    <input type="file" size="70" name="zip_file" />
                 </p>
 
                 <p>

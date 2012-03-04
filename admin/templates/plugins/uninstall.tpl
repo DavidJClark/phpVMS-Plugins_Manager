@@ -35,5 +35,5 @@
     {
         echo $message.'<br />';
     }
-    echo '</div><hr />';
+    echo '</div>';
 ?>

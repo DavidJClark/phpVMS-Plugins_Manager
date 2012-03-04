@@ -67,13 +67,13 @@ echo '</div><hr />';
         if(isset($sqlstatus))
         {
             echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 20px 20px; margin: 20px;">';
-            echo '<h2>Database Files</h2>';
+            echo '<h2>Database Files Installed</h2>';
             echo $sqlstatus;
             echo '</div><hr />';
         }
 
         echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 20px 20px; margin: 20px;">';
-        echo '<h2>Library Files</h2>';
+        echo '<h2>Library Files Installed</h2>';
         foreach($installed as $install)
         {
             echo $install.'<br />';
@@ -84,7 +84,7 @@ echo '</div><hr />';
         if(isset($assets))
         {
         echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 20px 20px; margin: 20px;">';
-        echo '<h2>Library Assets</h2>';
+        echo '<h2>Library Assets Installed</h2>';
         foreach($assets as $asset)
         {
             echo $asset.'<br />';

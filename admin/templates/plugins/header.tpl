@@ -10,6 +10,5 @@
 //@copyright Copyright (c) 2012, David Clark
 //@license http://creativecommons.org/licenses/by-nc-sa/3.0/
 ?>
-<h3>Plugin Manager (ver 1.0) - &copy; simpilotgroup.com</h3>
-
+<h3>Plugin Manager</h3>
 <hr />
