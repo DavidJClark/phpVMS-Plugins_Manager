@@ -30,15 +30,6 @@ foreach($config as $key => $value)
     {echo ucfirst($key).' - '.$value.'<br />';}
 }
 echo '</div>';
-//var_dump($config);
-
-
-//echo 'files<hr />';
-//foreach($files as $file)
-//{
-//    echo $file.'<br />';
-//}
-
 
 //display readme file
 $readmetext = file_get_contents($path.'readme.txt');
