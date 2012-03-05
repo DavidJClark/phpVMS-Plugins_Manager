@@ -105,7 +105,7 @@ My_New_module
 -my_new_module.sql
 -readme.txt
 -config.txt
-license.txt
+-license.txt
 -core
 --common
 ----My_New_ModuleData.class.php
