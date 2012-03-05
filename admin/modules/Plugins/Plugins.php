@@ -45,7 +45,7 @@ class Plugins extends CodonModule   {
 
             // if $file isn't this directory or its parent 
             // add to the $files array
-            if ($file != '.' && $file != '..')
+            if ($file != '.' && $file != '..' && $file != 'index.php')
             {
                 if(file_exists('modules/Plugins/uploads/'.$file.'/config.txt'))
                 {
