@@ -41,6 +41,7 @@ class Plugins extends CodonModule   {
     public function uploaded()  {
         $dirhandler = opendir("modules/Plugins/uploads/");
         $plugins = array();
+        $i = 1;
         while ($file = readdir($dirhandler)) {
 
             // if $file isn't this directory or its parent 
@@ -54,23 +55,22 @@ class Plugins extends CodonModule   {
                     foreach($info as $line)
                         {
                             $data = explode('=', $line);
-                            $config->$data[0] = trim($data[1]);
+                            $config[$i]->$data[0] = trim($data[1]);
                         }    
 
-                        $config->file = $file;
+                        $config[$i]->file = $file;
                 }
                 else
                 {
-                    $config->file = $file;
+                    $config[$i]->file = $file;
                 }
-                
-                $plugins[]=$config; 
+                $i++; 
             }   
 
         }
         closedir($dirhandler);        
         
-        $this->set('plugins', $plugins);
+        $this->set('plugins', $config);
         $this->show('plugins/header');
         $this->show('plugins/uploaded');
         $this->show('plugins/footer');
@@ -318,7 +318,7 @@ class Plugins extends CodonModule   {
                            {
                                //succsess creating directory 
                                $folders[] = '../core/templates/'.$parts[2];
-                               $installed[] = 'Directory '.$parts[3].' Created Successfully.';
+                               $installed[] = 'Directory '.$parts[2].' Created Successfully.';
                            }
                            else
                            {
@@ -327,8 +327,8 @@ class Plugins extends CodonModule   {
                                $failures[] = 'Creating '.$parts[2].' Template Directory Failed.';
                            }
                        }
-                       else
-                       {
+//                       else
+//                       {
                            //copy template files
                            if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
                            {
@@ -343,7 +343,7 @@ class Plugins extends CodonModule   {
                                $failure = TRUE;
                                $failures[] = 'File '.$parts[3].' Installation Failed.';
                            }
-                       }
+//                       }
                    }
                    
                }
@@ -352,8 +352,8 @@ class Plugins extends CodonModule   {
         }
        
         //merge all file arrays
-        $uninstall = array_merge($sqltables, $uninstall);
-        $uninstall = array_merge($uninstall, $folders);
+       if(isset($sqltables)){$uninstall = array_merge($sqltables, $uninstall);}
+       if(isset($folders)){$uninstall = array_merge($uninstall, $folders);}
        
        //set install status message
        if($failure == FALSE)
@@ -474,13 +474,7 @@ class Plugins extends CodonModule   {
             {
                 if(is_dir(trim($file)))
                 {
-                    if(file_exists(trim($file).'/assets'))
-                    {
-                        rmdir(trim($file).'/assets');
-                        $messages[] = 'Removed Directory '.trim($file).'/assets';
-                    }
-                    rmdir(trim($file));
-                    $messages[] = 'Removed Directory '.trim($file);
+                    $directories[] = trim($file);
                 }
                 else
                 {
@@ -488,6 +482,18 @@ class Plugins extends CodonModule   {
                     $messages[] = 'Removed File '.trim($file);
                 }
             }
+        }
+        
+        //remove the directories
+        foreach($directories as $directory)
+        {
+            if(file_exists(trim($directory).'/assets'))
+            {
+                rmdir(trim($directory).'/assets');
+                $messages[] = 'Removed Directory '.trim($directory).'/assets';
+            }
+            rmdir($directory);
+            $messages[] = 'Removed Directory '.trim($directory);
         }
         
         unlink('modules/Plugins/uploads/'.$plugin.'/uninstall.txt');
