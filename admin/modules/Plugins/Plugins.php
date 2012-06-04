@@ -164,7 +164,6 @@ class Plugins extends CodonModule   {
        $uninstall = array();
        $folders = array();
        
-       
        foreach($files as $file)
        {
            //get file extension
@@ -206,7 +205,103 @@ class Plugins extends CodonModule   {
            {
                $parts = explode('\\', $file);
                
-               if($parts[0] == 'core')
+               if($parts[0] == 'admin')
+               {
+                   //it's a module folder file
+                   if($parts[1] == 'modules')
+                   {
+                    
+                       //it's a plugin library file or directory
+                       
+                           if(!file_exists('../admin/modules/'.$parts[2]))
+                           {
+                               if(mkdir('../admin/modules/'.$parts[2], 0755))
+                               {        
+                                   //success creating directory 
+                                   $folders[] = '../admin/modules/'.$parts[2];
+                               }
+                               else
+                               {
+                                   //failed to create directory
+                                   $failure = TRUE;
+                                   $failures[] = 'Failure Creating '.$parts[2].' Module Directory';
+                               }
+                               //copy file
+                               if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
+                               {
+                                   //success copying file
+                                   $installed[] = 'File '.$parts[3].' Installed Successfully.';
+                                   $uninstall[] = '../'.$file;
+                               }
+                               else
+                               {
+                                   //failed to copy file
+                                   $installed[] = 'File '.$parts[3].' Installation Failed.';
+                                   $failure = TRUE;
+                                   $failures[] = 'File '.$parts[3].' Installation Failed.';
+                               }
+                           }
+                           else
+                           {
+                                if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
+                                {
+                                    //success copying file
+                                    $installed[] = 'File '.$parts[3].' Installed Successfully.';
+                                    $uninstall[] = '../'.$file;
+                                }
+                                else
+                                {
+                                   //failed to copy file
+                                   $installed[] = 'File '.$parts[3].' Installation Failed.';
+                                   $failure = TRUE;
+                                   $failures[] = 'File '.$parts[3].' Installation Failed.';
+                                }
+                           
+                       }
+                   }
+                   //it's a template file or directory
+                   elseif($parts[1] == 'templates')
+                   {
+                       if(is_dir('modules/Plugins/uploads/'.$plugin.'/'.$file)){continue;}
+
+                       //check for template directory
+                       if(!file_exists('../admin/templates/'.$parts[2]))
+                       {
+                           if(mkdir('../admin/templates/'.$parts[2], 0755))
+                           {
+                               //succsess creating directory 
+                               $folders[] = '../admin/templates/'.$parts[2];
+                               $installed[] = 'Directory '.$parts[2].' Created Successfully.';
+                           }
+                           else
+                           {
+                               //error creating directory
+                               $failure = TRUE;
+                               $failures[] = 'Creating '.$parts[2].' Template Directory Failed.';
+                           }
+                       }
+//                       else
+//                       {
+                           //copy template files
+                           if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
+                           {
+                               //success copying file
+                               $installed[] = 'File '.$parts[3].' Installed Successfully.';
+                               $uninstall[] = '../'.$file;
+                           }
+                           else
+                           {
+                               //error copying file
+                               $installed[] = 'File '.$parts[3].' Installation Failed.';
+                               $failure = TRUE;
+                               $failures[] = 'File '.$parts[3].' Installation Failed.';
+                           }
+//                       }
+                   }
+                   
+               }
+               
+               elseif($parts[0] == 'core')
                {
                    //it's a class file - probably data
                    if($parts[1] == 'common')
