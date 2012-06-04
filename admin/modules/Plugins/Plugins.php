@@ -1,4 +1,5 @@
 <?php
+
 //simpilotgroup addon module for phpVMS virtual airline system
 //
 //this module is licenced under the following license:
