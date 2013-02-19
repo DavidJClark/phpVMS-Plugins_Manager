@@ -35,7 +35,7 @@ echo '</div>';
 $readmetext = file_get_contents($path.'readme.txt');
 echo '<hr />';
 echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 10px 20px; margin: 20px;">';
-echo '<h1>readme.txt</h1>';
+echo '<h1>Plugin Details</h1>';
 $text = htmlentities($readmetext);
 echo nl2br($text);
 echo '</div>';
