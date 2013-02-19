@@ -152,381 +152,145 @@ class Plugins extends CodonModule   {
         return $all;
     }
     
-    public function install($plugin)    {
-       
+    public function install($plugin)    {       
         error_reporting(0);
         $failure = FALSE;
         $failures = array();
+        $installed = array();
+        $uninstall = array();
+        $folders = array();
+        $sqltables = array();
+        $directories = array();
+        $tables = array();
         
-       $files = $this->ls('*', 'modules/Plugins/uploads/'.$plugin.'/', TRUE, array('return_files'));
+        $_files = $this->ls('*', 'modules/Plugins/uploads/'.$plugin.'/', TRUE, array('return_files'));
+        $_folders = $this->ls('*', 'modules/Plugins/uploads/'.$plugin.'/', TRUE, array('return_folders'));       
        
-       //set array variables
-       $installed = array();
-       $uninstall = array();
-       $folders = array();
+        // Create all new folders
+        foreach($_folders as $folder){            
+            $_folder = SITE_ROOT.$folder; 
+            if(!file_exists($_folder)){
+                if(mkdir($_folder, 0755)){
+                    $folders[] = $_folder;
+                } else {
+                    $failure = TRUE;
+                    $failures[] = 'Failure Creating '.$_folder.' Directory';
+                }
+            }             
+        }       
        
-       foreach($files as $file)
-       {
-           //get file extension
-           $extension = substr(strrchr($file,'.'),1);
-           
-           //it's a sql file - lets insert it into the database
-           if($extension == 'sql')
-           {
-               $sqltables = array();
-               
-               $sqldata = $this->readSQLFile('modules/Plugins/uploads/'.$plugin.'/'.$file, TABLE_PREFIX);
-
+        foreach($_files as $file){            
+            $ext = pathinfo($file, PATHINFO_EXTENSION);
+            
+            if($ext == 'sql'){
+                // Take care of any SQL files
+                $sqldata = $this->readSQLFile('modules/Plugins/uploads/'.$plugin.'/'.$file, TABLE_PREFIX);
+                
 		foreach($sqldata as $sql) {
                     if($failure == TRUE){continue;}
-                        DB::query($sql['sql']);
-                        $sqltables[] = $sql['tablename'].'*sql';
-                        //set status message
-                        if(DB::error() != '')
-                            {
-                                $this->set('sqlstatus', 'SQL File/Database Error.');
-                                $failures[] = 'SQL File/Database Error.';
-                                $failure = TRUE;
-                            }
-                            else
-                            {
-                                $this->set('sqlstatus', 'Imported '.$file.' Into Database Successfully');
-                            }
+                    DB::query($sql['sql']);                    
+                    //set status message
+                    if(DB::error() != '') {
+                        $this->set('sqlstatus', 'SQL File/Database Error.');
+                        $failures[] = 'SQL File/Database Error.';
+                        $failure = TRUE;
+                    } else {
+                        if(!in_array($sql['tablename'].'*sql', $sqltables)){
+                            $sqltables[] = $sql['tablename'].'*sql';
+                            $tables[] = 'Imported '.$file.' Into Database Successfully';
+                        }                        
+                    }
                 }
-            }
-           
-           //it's a text file
-           elseif($extension == 'txt')
-           {
-               //should not have to do anything with this - maybe in the future
-           }
-           
-           //it's a library file or asset - lets put it into the install
-           else
-           {
-               $parts = explode('\\', $file);
-               
-               if($parts[0] == 'admin')
-               {
-                   //it's a module folder file
-                   if($parts[1] == 'modules')
-                   {
-                    
-                       //it's a plugin library file or directory
-                       
-                           if(!file_exists('../admin/modules/'.$parts[2]))
-                           {
-                               if(mkdir('../admin/modules/'.$parts[2], 0755))
-                               {        
-                                   //success creating directory 
-                                   $folders[] = '../admin/modules/'.$parts[2];
-                               }
-                               else
-                               {
-                                   //failed to create directory
-                                   $failure = TRUE;
-                                   $failures[] = 'Failure Creating '.$parts[2].' Module Directory';
-                               }
-                               //copy file
-                               if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                               {
-                                   //success copying file
-                                   $installed[] = 'File '.$parts[3].' Installed Successfully.';
-                                   $uninstall[] = '../'.$file;
-                               }
-                               else
-                               {
-                                   //failed to copy file
-                                   $installed[] = 'File '.$parts[3].' Installation Failed.';
-                                   $failure = TRUE;
-                                   $failures[] = 'File '.$parts[3].' Installation Failed.';
-                               }
-                           }
-                           else
-                           {
-                                if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                                {
-                                    //success copying file
-                                    $installed[] = 'File '.$parts[3].' Installed Successfully.';
-                                    $uninstall[] = '../'.$file;
-                                }
-                                else
-                                {
-                                   //failed to copy file
-                                   $installed[] = 'File '.$parts[3].' Installation Failed.';
-                                   $failure = TRUE;
-                                   $failures[] = 'File '.$parts[3].' Installation Failed.';
-                                }
-                           
-                       }
-                   }
-                   //it's a template file or directory
-                   elseif($parts[1] == 'templates')
-                   {
-                       if(is_dir('modules/Plugins/uploads/'.$plugin.'/'.$file)){continue;}
-
-                       //check for template directory
-                       if(!file_exists('../admin/templates/'.$parts[2]))
-                       {
-                           if(mkdir('../admin/templates/'.$parts[2], 0755))
-                           {
-                               //succsess creating directory 
-                               $folders[] = '../admin/templates/'.$parts[2];
-                               $installed[] = 'Directory '.$parts[2].' Created Successfully.';
-                           }
-                           else
-                           {
-                               //error creating directory
-                               $failure = TRUE;
-                               $failures[] = 'Creating '.$parts[2].' Template Directory Failed.';
-                           }
-                       }
-//                       else
-//                       {
-                           //copy template files
-                           if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                           {
-                               //success copying file
-                               $installed[] = 'File '.$parts[3].' Installed Successfully.';
-                               $uninstall[] = '../'.$file;
-                           }
-                           else
-                           {
-                               //error copying file
-                               $installed[] = 'File '.$parts[3].' Installation Failed.';
-                               $failure = TRUE;
-                               $failures[] = 'File '.$parts[3].' Installation Failed.';
-                           }
-//                       }
-                   }
-                   
-               }
-               
-               elseif($parts[0] == 'core')
-               {
-                   //it's a class file - probably data
-                   if($parts[1] == 'common')
-                   {
-                        if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                        {
-                            //file copied
-                            $uninstall[] = '../'.$file;
-                        }
-                        else
-                        {
-                            //copy failed
-                            $failure = TRUE;
-                            $failures[] = 'Failure Moving '.$file;
-                        }
-                   }
-                   //it's a module folder file
-                   elseif($parts[1] == 'modules')
-                   {
-                    //it's a plugin asset or directory
-                    if($parts[3] == 'assets')
-                       {
-                           if(!file_exists('../core/modules/'.$parts[2].'/assets'))
-                           {
-                               if(mkdir('../core/modules/'.$parts[2].'/assets', 0755))
-                               {
-                                   //successful directory creation
-                                   $assets = array();
-                               }
-                               else
-                               {
-                                   //failed creating directory
-                                   $failure = TRUE;
-                                   $failures[] = 'Error Creating Assets Directory.';
-                               }
-                           }
-                           if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                           {
-                               //success copying file
-                               $assets[] = 'Asset File '.$parts[4].' Installed Successfully.';
-                               $uninstall[] = '../'.$file;
-                           }
-                           else
-                           {
-                               //failure copying file
-                               $assets[] = 'Asset File '.$parts[4].' Installation Failed.';
-                               $failure = TRUE;
-                               $failures[] = 'Asset File '.$parts[4].' Installation Failed.';
-                           }
-                       }
-                       //it's a plugin library file or directory
-                       else
-                       {
-                           if(!file_exists('../core/modules/'.$parts[2]))
-                           {
-                               if(mkdir('../core/modules/'.$parts[2], 0755))
-                               {        
-                                   //success creating directory 
-                                   $folders[] = '../core/modules/'.$parts[2];
-                               }
-                               else
-                               {
-                                   //failed to create directory
-                                   $failure = TRUE;
-                                   $failures[] = 'Failure Creating '.$parts[2].' Module Directory';
-                               }
-                               //copy file
-                               if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                               {
-                                   //success copying file
-                                   $installed[] = 'File '.$parts[3].' Installed Successfully.';
-                                   $uninstall[] = '../'.$file;
-                               }
-                               else
-                               {
-                                   //failed to copy file
-                                   $installed[] = 'File '.$parts[3].' Installation Failed.';
-                                   $failure = TRUE;
-                                   $failures[] = 'File '.$parts[3].' Installation Failed.';
-                               }
-                           }
-                           else
-                           {
-                                if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                                {
-                                    //success copying file
-                                    $installed[] = 'File '.$parts[3].' Installed Successfully.';
-                                    $uninstall[] = '../'.$file;
-                                }
-                                else
-                                {
-                                   //failed to copy file
-                                   $installed[] = 'File '.$parts[3].' Installation Failed.';
-                                   $failure = TRUE;
-                                   $failures[] = 'File '.$parts[3].' Installation Failed.';
-                                }
-                           }
-                       }
-                   }
-                   //it's a template file or directory
-                   elseif($parts[1] == 'templates')
-                   {
-                       if(is_dir('modules/Plugins/uploads/'.$plugin.'/'.$file)){continue;}
-
-                       //check for template directory
-                       if(!file_exists('../core/templates/'.$parts[2]))
-                       {
-                           if(mkdir('../core/templates/'.$parts[2], 0755))
-                           {
-                               //succsess creating directory 
-                               $folders[] = '../core/templates/'.$parts[2];
-                               $installed[] = 'Directory '.$parts[2].' Created Successfully.';
-                           }
-                           else
-                           {
-                               //error creating directory
-                               $failure = TRUE;
-                               $failures[] = 'Creating '.$parts[2].' Template Directory Failed.';
-                           }
-                       }
-//                       else
-//                       {
-                           //copy template files
-                           if(copy('modules/Plugins/uploads/'.$plugin.'/'.$file, '../'.$file))
-                           {
-                               //success copying file
-                               $installed[] = 'File '.$parts[3].' Installed Successfully.';
-                               $uninstall[] = '../'.$file;
-                           }
-                           else
-                           {
-                               //error copying file
-                               $installed[] = 'File '.$parts[3].' Installation Failed.';
-                               $failure = TRUE;
-                               $failures[] = 'File '.$parts[3].' Installation Failed.';
-                           }
-//                       }
-                   }
-                   
-               }
-               
-           }
+            } elseif( $ext == 'txt'){
+                //Text files skipped for now
+                
+            } else {
+                // Copy files from current location into proper location                
+                $_newfile = '../'.$file;
+                $_oldfile = 'modules/Plugins/uploads/'.$plugin.'/'.$file;
+                
+                // Delete old file (helpful for upgrading)
+                if(file_exists($_newfile)){
+                    unlink($_newfile);                    
+                }
+                
+                if(copy($_oldfile, $_newfile)){
+                    $installed[] = 'File '.$file.' Installed Successfully.';
+                    $uninstall[] = $_newfile;
+                } else {
+                    $installed[] = 'File '.$file.' Installation Failed.';
+                    $failure = TRUE;
+                    $failures[] = 'File '.$file.' Installation Failed.';
+                }
+            }         
+            
         }
-       
+        
         //merge all file arrays
-       if(isset($sqltables)){$uninstall = array_merge($sqltables, $uninstall);}
-       if(isset($folders)){$uninstall = array_merge($uninstall, $folders);}
+        if(isset($sqltables)){$uninstall = array_merge($sqltables, $uninstall);}
+        if(isset($folders)){$uninstall = array_merge($uninstall, $folders);}
        
-       //set install status message
-       if($failure == FALSE)
-       {
-           $status = 'Successful Installation.';
+        //set install status message
+        if($failure == FALSE){
+            $status = 'Successful Installation.';
            
             //create uninstall file
-           $deletefile = 'modules/Plugins/uploads/'.$plugin.'/uninstall.txt';
-           $fh = fopen($deletefile, 'w');
-           foreach($uninstall as $uni)
-           {
-               $line =$uni.'\n ';
-               fwrite($fh, $uni.PHP_EOL);
-           }
-           fclose($fh);
-           //end creating uninstall file
-       }
-       else
-       {
-           //install failed
-           //remove any database tables, directories, and files that were installed
-           foreach($uninstall as $file)
-            {
+            $deletefile = 'modules/Plugins/uploads/'.$plugin.'/uninstall.txt';
+            $fh = fopen($deletefile, 'w');
+            foreach($uninstall as $uni) {
+                $line =$uni.'\n ';
+                fwrite($fh, $uni.PHP_EOL);
+            }
+            fclose($fh);
+            //end creating uninstall file
+        } else {
+            // INSTALLATION FAILED
+            // Remove any database tables and files that were installed
+            foreach($uninstall as $file) {
                 //check if it is a sql table and drop it if it is
                 $sqltable = explode('*', $file);
-                if(isset($sqltable[1]))
-                {
+                if(isset($sqltable[1])) {
                     if(!isset($tables)){$tables = array();}
                     $table = explode('*', $file);
                     $query = 'DROP TABLE '.$table[0];
                     DB::query($query);
-                }
-                else
-                {
-                    if(is_dir(trim($file)))
-                    {
+                } else {
+                    if(is_dir(trim($file))) {
                         $directories[] = $file;
-                    }
-                    else
-                    {
+                    } else {
                         unlink(trim($file));
                     }
                 }
             }
-            if(isset($directories))
-            {
-            foreach($directories as $directory)
-                {
-                    if(file_exists(trim($directory).'/assets'))
-                    {
-                        rmdir(trim($directory).'/assets');
+            // Remove installed folders
+            if(isset($directories)) {
+                for($i = count($directories); $i > 0; $i--){
+                    if ($this->dir_is_empty($directories[$i-1])) {
+                        rmdir($directories[$i-1]);
                     }
-                    rmdir(trim($directory));
                 }
             }
-           //set status data for view file
-           $status = 'Installation Failed.';
-           //send failure messages to results screen
-           $this->set('failures', $failures);
-           //get plugin data for email to developer
-           $info = file('modules/Plugins/uploads/'.$plugin.'/config.txt');
-            foreach($info as $line)
-            {
+            //set status data for view file
+            $status = 'Installation Failed.';
+            //send failure messages to results screen
+            $this->set('failures', $failures);
+            //get plugin data for email to developer
+            $info = file('modules/Plugins/uploads/'.$plugin.'/config.txt');
+            foreach($info as $line) {
                 $data = explode('=', $line);
                 $config->$data[0] = trim($data[1]);
             }
            $this->set('config', $config);
            //end install failure
-       }
+        }      
        
-       
-       if(isset($assets)){$this->set('assets', $assets);}
-       $this->set('installed', $installed);
-       $this->set('status', $status);
-       $this->show('plugins/header');
-       $this->show('plugins/result');
-       $this->show('plugins/footer');
+        if(isset($assets)){$this->set('assets', $assets);}
+        $this->set('tables', $tables);
+        $this->set('installed', $installed);
+        $this->set('status', $status);
+        $this->show('plugins/header');
+        $this->show('plugins/result');
+        $this->show('plugins/footer');
     }
     
     //send failure message to developer
@@ -549,31 +313,23 @@ class Plugins extends CodonModule   {
         
         $files = file('modules/Plugins/uploads/'.$plugin.'/uninstall.txt');
         
-        foreach($files as $file)
-        {
+        foreach($files as $file) {
             //check if it is a sql table and drop it if it is
             $sqltable = explode('*', $file);
-            if(isset($sqltable[1]))
-            {
+            if(isset($sqltable[1])) {
                 if(!isset($tables)){$tables = array();}
                 $table = explode('*', $file);
                 $query = 'DROP TABLE '.$table[0];
                 DB::query($query);
                 $tables[] = $table[0];
-                if(DB::error() != '')
-                {
+                if(DB::error() != '') {
                     $failure = TRUE;
                     $failmessages[] = 'Error Dropping Database Table '.$table[0].'. Remove Manually.';
                 }
-            }
-            else
-            {
-                if(is_dir(trim($file)))
-                {
+            } else {
+                if(is_dir(trim($file))) {
                     $directories[] = trim($file);
-                }
-                else
-                {
+                } else {
                     unlink(trim($file));
                     $messages[] = 'Removed File '.trim($file);
                 }
@@ -581,16 +337,16 @@ class Plugins extends CodonModule   {
         }
         
         //remove the directories
-        foreach($directories as $directory)
-        {
-            if(file_exists(trim($directory).'/assets'))
-            {
-                rmdir(trim($directory).'/assets');
-                $messages[] = 'Removed Directory '.trim($directory).'/assets';
+        if(isset($directories)) {
+            for($i = count($directories); $i > 0; $i--){
+                if ($this->dir_is_empty($directories[$i-1])) {
+                    rmdir($directories[$i-1]);
+                    $messages[] = 'Removed Folder '.trim($directories[$i-1]);
+                } else {
+                    $failmesages[] = 'Error Removing Folder '.trim($directories[$i-1]).' - Folder NOT empty.';
+                }
             }
-            rmdir($directory);
-            $messages[] = 'Removed Directory '.trim($directory);
-        }
+        }    
         
         unlink('modules/Plugins/uploads/'.$plugin.'/uninstall.txt');
         $messages[] = 'Removed uninstall token';
@@ -674,6 +430,11 @@ class Plugins extends CodonModule   {
             $this->rrdir($directory);
             $this->index();
 
+        }
+        
+        public function dir_is_empty($dir) {
+            if (!is_readable($dir)) return NULL;
+            return (count(scandir($dir)) == 2);
         }
         
         public function rrdir($dir) { 

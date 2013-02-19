@@ -64,11 +64,14 @@ echo '</div><hr />';
     }
     else
     {
-        if(isset($sqlstatus))
+        if(isset($tables))
         {
             echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 20px 20px; margin: 20px;">';
             echo '<h2>Database Files Installed</h2>';
-            echo $sqlstatus;
+            foreach($tables as $table)
+            {
+                echo $table.'<br />';
+            }
             echo '</div><hr />';
         }
 
