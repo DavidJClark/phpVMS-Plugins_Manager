@@ -10,6 +10,19 @@
 //@copyright Copyright (c) 2012, David Clark
 //@license http://creativecommons.org/licenses/by-nc-sa/3.0/
 ?>
+<h3>Upload Plugins From GitHub</h3>
+<?php
+    if($github != '')   {
+        foreach($github as $key => $link)   {
+            echo '<a href="'.adminurl('/plugins/github_file/'.$key).'">'.$link[1].'</a><br />';
+        }
+    }
+    else    {
+        echo 'No Plugins Available<br />';
+    }
+?>
+<br /><hr />
+<h3>Upload A Plugin File</h3>
 <form action="<?php echo SITE_URL?>/admin/index.php/plugins" method="post" enctype="multipart/form-data">
                 <p>
                     <label for="file">Plugin to upload:</label><br />

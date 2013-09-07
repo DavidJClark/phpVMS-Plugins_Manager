@@ -197,7 +197,7 @@ class Plugins extends CodonModule   {
                     } else {
                         if(!in_array($sql['tablename'].'*sql', $sqltables)){
                             $sqltables[] = $sql['tablename'].'*sql';
-                            $tables[] = 'Imported '.$file.' Into Database Successfully';
+                            $tables[] = 'Imported '.$sql['tablename'].' Into Database Successfully';
                         }                        
                     }
                 }
@@ -361,8 +361,69 @@ class Plugins extends CodonModule   {
     }
     
     public function upload()    {
+        
+        $url = 'http://www.simpilotgroup.com/downloads/plugins.txt';
+        $fp = fopen("plugins.txt", "w"); 
+        $file = new CodonWebService();
+        $contents = @$file->get($url);
+        fwrite($fp, $contents);
+        fclose($fp);
+        $lines = explode("\n", $contents);
+        foreach($lines as $line)    {
+            $github[] = explode('+', $line);
+        }
+        $this->set('github', $github);
         $this->show('plugins/header');
         $this->show('plugins/upload_form');
+        $this->show('plugins/footer');
+    }
+    
+    public function github_file($key)   {
+        
+        $filename = "plugins.txt";
+        $handle = fopen($filename, "rb");
+        $contents = fread($handle, filesize($filename));
+        fclose($handle);
+       
+        $lines = explode("\n", $contents);
+        foreach($lines as $line)    {
+            $github[] = explode('+', $line);
+        }
+        $url = $github[$key][0];
+        
+            $target_url = 'https://github.com/'.$url;
+            $userAgent = 'Googlebot/2.1 (http://www.googlebot.com/bot.html)';
+            $file_zip = "newfile.zip";
+
+            // make the cURL request to $target_url
+            $ch = curl_init();
+            $fp = fopen("$file_zip", "w"); 
+            curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
+            curl_setopt($ch, CURLOPT_URL,$target_url);
+            curl_setopt($ch, CURLOPT_FAILONERROR, true);
+            curl_setopt($ch, CURLOPT_HEADER,0); 
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+            curl_setopt($ch, CURLOPT_BINARYTRANSFER,true);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 0);
+            curl_setopt($ch, CURLOPT_FILE, $fp);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+            $page = curl_exec($ch);
+
+            fclose($fp);
+        
+            $zip = new ZipArchive();
+                    $x = $zip->open($file_zip);
+                    if ($x === true) {
+                            $zip->extractTo("modules/Plugins/uploads/");
+                            $zip->close();
+
+                            unlink($file_zip);
+                    }
+                    
+        $this->show('plugins/header');
+        $this->show('plugins/upload_success');
         $this->show('plugins/footer');
     }
     
