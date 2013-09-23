@@ -18,4 +18,7 @@
 	<li><span class="file">
 		<a href="<?php echo SITE_URL?>/admin/index.php/plugins/upload">Upload Plugin</a>
 	</span></li>
+        <li><span class="file">
+		<a href="<?php echo SITE_URL?>/admin/index.php/plugins/force_new_listing">Force Refresh Of Listing File</a>
+	</span></li>
 </ul>

@@ -47,7 +47,7 @@ class Plugins extends CodonModule   {
 
             // if $file isn't this directory or its parent 
             // add to the $files array
-            if ($file != '.' && $file != '..' && $file != 'index.php')
+            if ($file != '.' && $file != '..' && $file != 'index.php' && $file != 'pluginlist.txt')
             {
                 if(file_exists('modules/Plugins/uploads/'.$file.'/config.txt'))
                 {
@@ -366,21 +366,48 @@ class Plugins extends CodonModule   {
         $this->show('plugins/header');
         $this->show('plugins/uninstall');
         $this->show('plugins/footer');
+    }
+    
+    public function force_new_listing() {
+        $this->get_new_listing();
+        $this->set('message', '<div id="success">New Plugin Listing Downloaded.</div>');
+        $this->uploaded();
+    }
+    
+    public function get_new_listing()   {
         
+        $target_url = 'https://raw.github.com/DavidJClark/phpVMS-PluginsList/master/plugins.txt';
+        
+        // make the cURL request
+        $ch = curl_init();
+        $fp = fopen("modules/Plugins/uploads/pluginlist.txt", "w");
+        curl_setopt($ch, CURLOPT_URL,$target_url);
+        curl_setopt($ch, CURLOPT_FAILONERROR, true);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+        curl_setopt($ch, CURLOPT_FILE, $fp);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+        curl_exec($ch);
+        fclose($fp);
     }
     
     public function upload()    {
         
-        $url = 'http://www.simpilotgroup.com/downloads/plugins.txt';
-        $fp = fopen("plugins.txt", "w"); 
-        $file = new CodonWebService();
-        $contents = @$file->get($url);
-        fwrite($fp, $contents);
-        fclose($fp);
-        $lines = explode("\n", $contents);
+        if(time()-filemtime('modules/Plugins/uploads/pluginlist.txt') > 604800)    {
+            $this->get_new_listing();
+        }
+        
+        $filename = "modules/Plugins/uploads/pluginlist.txt";
+        $handle = fopen($filename, "rb");
+        $lines = fread($handle, filesize($filename));
+        fclose($handle);
+       
+        $lines = explode("\n", $lines);
         foreach($lines as $line)    {
             $github[] = explode('+', $line);
         }
+        
         $this->set('github', $github);
         $this->show('plugins/header');
         $this->show('plugins/upload_form');
@@ -389,7 +416,7 @@ class Plugins extends CodonModule   {
     
     public function github_file($key)   {
         
-        $filename = "plugins.txt";
+        $filename = "modules/Plugins/uploads/pluginlist.txt";
         $handle = fopen($filename, "rb");
         $contents = fread($handle, filesize($filename));
         fclose($handle);
@@ -418,27 +445,25 @@ class Plugins extends CodonModule   {
             curl_setopt($ch, CURLOPT_FILE, $fp);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
-            $page = curl_exec($ch);
+            curl_exec($ch);
 
             fclose($fp);
         
-            $zip = new ZipArchive();            
+            $zip = new ZipArchive();
             $x = $zip->open($file_zip);
             //check if module already exists - do not allow it to be overwritten - use update function
             $fname = $zip->statIndex(0);
             if(file_exists("modules/Plugins/uploads/".$fname['name']))  {
-                    $this->show('plugins/header');
+                   $this->show('plugins/header');
                     $this->show('plugins/upload_alreadyexists');
                     $this->show('plugins/footer');
                     return;
                 }
-            
-            
             if ($x === true) {
-                $zip->extractTo("modules/Plugins/uploads/");
-                $zip->close();
+                    $zip->extractTo("modules/Plugins/uploads/");
+                    $zip->close();
 
-                unlink($file_zip);
+                    unlink($file_zip);
             }
                     
         $this->show('plugins/header');

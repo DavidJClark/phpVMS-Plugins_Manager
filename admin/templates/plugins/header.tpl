@@ -12,3 +12,8 @@
 ?>
 <h3>Plugin Manager</h3>
 <hr />
+<?php
+    if(isset($message)) {
+        echo $message;
+    }
+?>
