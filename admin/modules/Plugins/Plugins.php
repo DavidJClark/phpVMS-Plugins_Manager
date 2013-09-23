@@ -243,6 +243,13 @@ class Plugins extends CodonModule   {
             }
             fclose($fh);
             //end creating uninstall file
+            
+            //date installed file for reference
+            $datefile = 'modules/Plugins/uploads/'.$plugin.'/installdate.txt';
+            $fh = fopen($datefile, 'w');
+            fwrite($fh, time());
+            fclose($fh);
+            
         } else {
             // INSTALLATION FAILED
             // Remove any database tables and files that were installed
@@ -350,6 +357,8 @@ class Plugins extends CodonModule   {
         
         unlink('modules/Plugins/uploads/'.$plugin.'/uninstall.txt');
         $messages[] = 'Removed uninstall token';
+        unlink('modules/Plugins/uploads/'.$plugin.'/installdate.txt');
+        $messages[] = 'Removed install date token';
         
         if($failure == TRUE)($this->set('failmessages', $failmessages));
         if(isset($tables)){$this->set('sqltables', $tables);}
@@ -413,14 +422,24 @@ class Plugins extends CodonModule   {
 
             fclose($fp);
         
-            $zip = new ZipArchive();
-                    $x = $zip->open($file_zip);
-                    if ($x === true) {
-                            $zip->extractTo("modules/Plugins/uploads/");
-                            $zip->close();
+            $zip = new ZipArchive();            
+            $x = $zip->open($file_zip);
+            //check if module already exists - do not allow it to be overwritten - use update function
+            $fname = $zip->statIndex(0);
+            if(file_exists("modules/Plugins/uploads/".$fname['name']))  {
+                    $this->show('plugins/header');
+                    $this->show('plugins/upload_alreadyexists');
+                    $this->show('plugins/footer');
+                    return;
+                }
+            
+            
+            if ($x === true) {
+                $zip->extractTo("modules/Plugins/uploads/");
+                $zip->close();
 
-                            unlink($file_zip);
-                    }
+                unlink($file_zip);
+            }
                     
         $this->show('plugins/header');
         $this->show('plugins/upload_success');
