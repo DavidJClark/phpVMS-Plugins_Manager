@@ -32,7 +32,16 @@ foreach($config as $key => $value)
 echo '</div>';
 
 //display readme file
-$readmetext = file_get_contents($path.'readme.txt');
+$filename = $path.'readme.txt';
+if(file_exists($path.'readme.txt'))  {
+    $readmetext = file_get_contents($path.'readme.txt');
+}
+elseif (file_exists($path.'readme.md')) {
+    $readmetext = file_get_contents($path.'readme.md');
+}
+else    {
+    $redmetext = 'Unavailable';
+}
 echo '<hr />';
 echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 10px 20px; margin: 20px;">';
 echo '<h1>Plugin Details</h1>';
