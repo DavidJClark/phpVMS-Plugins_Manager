@@ -9,6 +9,10 @@
 //@link http://www.simpilotgroup.com
 //@copyright Copyright (c) 2012, David Clark
 //@license http://creativecommons.org/licenses/by-nc-sa/3.0/
+
+    echo '<b>This Version of phpVMS is using the ';
+    if($phptemplate == TRUE) {echo '.php';} else {echo '.tpl';}
+    echo ' template extension. Be sure you are choosing the correct module format.</b>';
 ?>
 <h3>Upload Plugins From GitHub</h3>
 <?php

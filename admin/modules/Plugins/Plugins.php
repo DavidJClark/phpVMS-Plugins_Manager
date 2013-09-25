@@ -407,7 +407,13 @@ class Plugins extends CodonModule   {
         foreach($lines as $line)    {
             $github[] = explode('+', $line);
         }
-        
+        $TemplateExtension = new TemplateSet();
+        if($TemplateExtension->tpl_ext == 'php') {
+            $this->set('phptemplate', TRUE);
+        }
+        else    {
+            $this->set('phptemplate', FALSE);
+        }
         $this->set('github', $github);
         $this->show('plugins/header');
         $this->show('plugins/upload_form');
