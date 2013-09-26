@@ -47,7 +47,8 @@ class Plugins extends CodonModule   {
 
             // if $file isn't this directory or its parent 
             // add to the $files array
-            if ($file != '.' && $file != '..' && $file != 'index.php' && $file != 'pluginlist.txt')
+            if ($file != '.' && $file != '..' && $file != 'index.php'
+                    && $file != 'plugins.txt' && $file != 'tpl_plugins.txt')
             {
                 if(file_exists('modules/Plugins/uploads/'.$file.'/config.txt'))
                 {
@@ -376,11 +377,20 @@ class Plugins extends CodonModule   {
     
     public function get_new_listing()   {
         
-        $target_url = 'https://raw.github.com/DavidJClark/phpVMS-PluginsList/master/plugins.txt';
+        //check for template extension type
+        $TemplateExtension = new TemplateSet();
+        if($TemplateExtension->tpl_ext == 'php') {
+            $file = 'plugins.txt';
+        }
+        else    {
+            $file = 'tpl_plugins.txt';
+        }
+        
+        $target_url = 'https://raw.github.com/DavidJClark/phpVMS-PluginsList/master/'.$file;
         
         // make the cURL request
         $ch = curl_init();
-        $fp = fopen("modules/Plugins/uploads/pluginlist.txt", "w");
+        $fp = fopen("modules/Plugins/uploads/".$file, "w");
         curl_setopt($ch, CURLOPT_URL,$target_url);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -393,12 +403,22 @@ class Plugins extends CodonModule   {
     }
     
     public function upload()    {
+        //check for template extension type
+        $TemplateExtension = new TemplateSet();
+        if($TemplateExtension->tpl_ext == 'php') {
+            $this->set('phptemplate', TRUE);
+            $file = 'plugins.txt';
+        }
+        else    {
+            $this->set('phptemplate', FALSE);
+            $file = 'tpl_plugins.txt';
+        }
         
-        if(time()-filemtime('modules/Plugins/uploads/pluginlist.txt') > 604800)    {
+        if(time()-filemtime('modules/Plugins/uploads/'.$file) > 604800)    {
             $this->get_new_listing();
         }
         
-        $filename = "modules/Plugins/uploads/pluginlist.txt";
+        $filename = "modules/Plugins/uploads/".$file;
         $handle = fopen($filename, "rb");
         $lines = fread($handle, filesize($filename));
         fclose($handle);
@@ -407,13 +427,7 @@ class Plugins extends CodonModule   {
         foreach($lines as $line)    {
             $github[] = explode('+', $line);
         }
-        $TemplateExtension = new TemplateSet();
-        if($TemplateExtension->tpl_ext == 'php') {
-            $this->set('phptemplate', TRUE);
-        }
-        else    {
-            $this->set('phptemplate', FALSE);
-        }
+        
         $this->set('github', $github);
         $this->show('plugins/header');
         $this->show('plugins/upload_form');
@@ -422,7 +436,17 @@ class Plugins extends CodonModule   {
     
     public function github_file($key)   {
         
-        $filename = "modules/Plugins/uploads/pluginlist.txt";
+        //check for template extension type
+        $TemplateExtension = new TemplateSet();
+        if($TemplateExtension->tpl_ext == 'php') {
+            $file = 'plugins.txt';
+        }
+        else    {
+            $file = 'tpl_plugins.txt';
+        }
+        
+        
+        $filename = "modules/Plugins/uploads/".$file;
         $handle = fopen($filename, "rb");
         $contents = fread($handle, filesize($filename));
         fclose($handle);
