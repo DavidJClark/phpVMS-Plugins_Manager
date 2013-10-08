@@ -15,7 +15,7 @@ class Plugins extends CodonModule   {
     
     public function HTMLHead()
     {
-            $this->set('sidebar', 'plugins/sidebar.php');
+            $this->set('sidebar', 'plugins/sidebar.tpl');
     }
 
     public function NavBar()
