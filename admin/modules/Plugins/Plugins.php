@@ -203,8 +203,36 @@ class Plugins extends CodonModule   {
                     }
                 }
             } elseif( $ext == 'txt'){
-                //Text files skipped for now
-                
+                // check config.txt for notification preference
+                if($file == 'config.txt')   {
+                    $configdata = '';
+                    $info = file('modules/Plugins/uploads/'.$plugin.'/config.txt');
+                    foreach($info as $line) {
+                        $data = explode('=', $line);
+                        if($data[0] == 'notify' && $data[1] == 'true')  {
+                            $configdata->notify == TRUE;
+                        }
+                        else    {
+                            $configdata->$data[0] = $data[1];
+                        }
+                    }
+                    if(isset($configdata->notify) && $configdata->notify == TRUE)   {
+                        $servername = $_SERVER['SERVER_NAME'];
+                        $serveraddress = $_SERVER['SERVER_ADDR'];
+                        $host = $_SERVER['HTTP_HOST'];
+                        $root = $_SERVER['PHP_SELF'];
+                        $user = $_SERVER['REMOTE_ADDR'];
+                        $email = $configdata->email;
+                        $sub = $plugin.' Module Installation';
+                        $message = 'The '.$plugin.' Module ('.$configdata->version.') has been installed at '.SITE_NAME.'.<br />';
+                        $message .= 'Server Name: '.$servername.'<br />';
+                        $message .= 'Server IP Address: '.$serveraddress.'<br />';
+                        $message .= 'Host: '.$host.'<br />';
+                        $message .= 'Document Root: '.$root.'<br />';
+                        $message .= 'User ip:'.$user;
+                        Util::SendEmail($email, $sub, $message);
+                    }
+                }
             } else {
                 // Copy files from current location into proper location                
                 $_newfile = '../'.$file;

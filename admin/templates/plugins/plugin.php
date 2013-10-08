@@ -22,6 +22,7 @@ echo '<div style="border: 1px solid #000; background: #E8E8E8; padding: 0 20px 1
 
 foreach($config as $key => $value)
 {
+    if($key == 'notify'){continue;}
     if($key == 'plugin')
     {echo '<h1>'.ucfirst($value).'</h1>';}
     elseif($key == 'link')
