@@ -12,7 +12,7 @@
 //@license http://creativecommons.org/licenses/by-nc-sa/3.0/
 
 class Plugins extends CodonModule   {
-    
+
     public function HTMLHead()
     {
             $this->set('sidebar', 'plugins/sidebar.tpl');
@@ -22,7 +22,7 @@ class Plugins extends CodonModule   {
     {
         echo '<li><a href="'.SITE_URL.'/admin/index.php/plugins">Plugin Manager</a></li>';
     }
-    
+
     public function index() {
         if($this->post->action !='')
         {
@@ -38,14 +38,14 @@ class Plugins extends CodonModule   {
             $this->uploaded();
         }
     }
-    
+
     public function uploaded()  {
         $dirhandler = opendir("modules/Plugins/uploads/");
         $plugins = array();
         $i = 1;
         while ($file = readdir($dirhandler)) {
-
-            // if $file isn't this directory or its parent 
+            $config[$i] = new stdClass();
+            // if $file isn't this directory or its parent
             // add to the $files array
             if ($file != '.' && $file != '..' && $file != 'index.php'
                     && $file != 'plugins.txt' && $file != 'tpl_plugins.txt')
@@ -53,12 +53,12 @@ class Plugins extends CodonModule   {
                 if(file_exists('modules/Plugins/uploads/'.$file.'/config.txt'))
                 {
                     $info = file('modules/Plugins/uploads/'.$file.'/config.txt');
-                    
+
                     foreach($info as $line)
                         {
                             $data = explode('=', $line);
                             $config[$i]->$data[0] = trim($data[1]);
-                        }    
+                        }
 
                         $config[$i]->file = $file;
                 }
@@ -66,42 +66,42 @@ class Plugins extends CodonModule   {
                 {
                     $config[$i]->file = $file;
                 }
-                $i++; 
-            }   
+                $i++;
+            }
 
         }
-        closedir($dirhandler);        
-        
+        closedir($dirhandler);
+
         $this->set('plugins', $config);
         $this->show('plugins/header');
         $this->show('plugins/uploaded');
         $this->show('plugins/footer');
     }
-    
+
     public function get_plugin($plugin) {
-        
+
         $info = file('modules/Plugins/uploads/'.$plugin.'/config.txt');
         foreach($info as $line)
         {
             $data = explode('=', $line);
             $config->$data[0] = trim($data[1]);
         }
-        
+
         //check to see if plugin is already installed
         if(file_exists('modules/Plugins/uploads/'.$plugin.'/uninstall.txt'))
         {$installed = TRUE;}
         else
         {$installed = FALSE;}
-        
+
         $this->set('installed', $installed);
         $this->set('plugin', $plugin);
-        $this->set('config', $config);        
+        $this->set('config', $config);
         $this->set('path', 'modules/Plugins/uploads/'.$plugin.'/');
         $this->show('plugins/header');
         $this->show('plugins/plugin');
         $this->show('plugins/footer');
     }
-    
+
     function ls($pattern="*", $folder="", $recursivly="", $options=array('return_files','return_folders')) {
         if($folder) {
             $current_folder = realpath('.');
@@ -152,8 +152,8 @@ class Plugins extends CodonModule   {
         if($folder) chdir($current_folder);
         return $all;
     }
-    
-    public function install($plugin)    {       
+
+    public function install($plugin)    {
         error_reporting(0);
         $failure = FALSE;
         $failures = array();
@@ -163,13 +163,13 @@ class Plugins extends CodonModule   {
         $sqltables = array();
         $directories = array();
         $tables = array();
-        
+
         $_files = $this->ls('*', 'modules/Plugins/uploads/'.$plugin.'/', TRUE, array('return_files'));
-        $_folders = $this->ls('*', 'modules/Plugins/uploads/'.$plugin.'/', TRUE, array('return_folders'));       
-       
+        $_folders = $this->ls('*', 'modules/Plugins/uploads/'.$plugin.'/', TRUE, array('return_folders'));
+
         // Create all new folders
-        foreach($_folders as $folder){            
-            $_folder = SITE_ROOT.$folder; 
+        foreach($_folders as $folder){
+            $_folder = SITE_ROOT.$folder;
             if(!file_exists($_folder)){
                 if(mkdir($_folder, 0755)){
                     $folders[] = $_folder;
@@ -177,19 +177,19 @@ class Plugins extends CodonModule   {
                     $failure = TRUE;
                     $failures[] = 'Failure Creating '.$_folder.' Directory';
                 }
-            }             
-        }       
-       
-        foreach($_files as $file){            
+            }
+        }
+
+        foreach($_files as $file){
             $ext = pathinfo($file, PATHINFO_EXTENSION);
-            
+
             if($ext == 'sql'){
                 // Take care of any SQL files
                 $sqldata = $this->readSQLFile('modules/Plugins/uploads/'.$plugin.'/'.$file, TABLE_PREFIX);
-                
+
 		foreach($sqldata as $sql) {
                     if($failure == TRUE){continue;}
-                    DB::query($sql['sql']);                    
+                    DB::query($sql['sql']);
                     //set status message
                     if(DB::error() != '') {
                         $this->set('sqlstatus', 'SQL File/Database Error.');
@@ -199,7 +199,7 @@ class Plugins extends CodonModule   {
                         if(!in_array($sql['tablename'].'*sql', $sqltables)){
                             $sqltables[] = $sql['tablename'].'*sql';
                             $tables[] = 'Imported '.$sql['tablename'].' Into Database Successfully';
-                        }                        
+                        }
                     }
                 }
             } elseif( $ext == 'txt'){
@@ -234,15 +234,15 @@ class Plugins extends CodonModule   {
                     }
                 }
             } else {
-                // Copy files from current location into proper location                
+                // Copy files from current location into proper location
                 $_newfile = '../'.$file;
                 $_oldfile = 'modules/Plugins/uploads/'.$plugin.'/'.$file;
-                
+
                 // Delete old file (helpful for upgrading)
                 if(file_exists($_newfile)){
-                    unlink($_newfile);                    
+                    unlink($_newfile);
                 }
-                
+
                 if(copy($_oldfile, $_newfile)){
                     $installed[] = 'File '.$file.' Installed Successfully.';
                     $uninstall[] = $_newfile;
@@ -251,18 +251,18 @@ class Plugins extends CodonModule   {
                     $failure = TRUE;
                     $failures[] = 'File '.$file.' Installation Failed.';
                 }
-            }         
-            
+            }
+
         }
-        
+
         //merge all file arrays
         if(isset($sqltables)){$uninstall = array_merge($sqltables, $uninstall);}
         if(isset($folders)){$uninstall = array_merge($uninstall, $folders);}
-       
+
         //set install status message
         if($failure == FALSE){
             $status = 'Successful Installation.';
-           
+
             //create uninstall file
             $deletefile = 'modules/Plugins/uploads/'.$plugin.'/uninstall.txt';
             $fh = fopen($deletefile, 'w');
@@ -272,13 +272,13 @@ class Plugins extends CodonModule   {
             }
             fclose($fh);
             //end creating uninstall file
-            
+
             //date installed file for reference
             $datefile = 'modules/Plugins/uploads/'.$plugin.'/installdate.txt';
             $fh = fopen($datefile, 'w');
             fwrite($fh, time());
             fclose($fh);
-            
+
         } else {
             // INSTALLATION FAILED
             // Remove any database tables and files that were installed
@@ -318,8 +318,8 @@ class Plugins extends CodonModule   {
             }
            $this->set('config', $config);
            //end install failure
-        }      
-       
+        }
+
         if(isset($assets)){$this->set('assets', $assets);}
         $this->set('tables', $tables);
         $this->set('installed', $installed);
@@ -328,27 +328,27 @@ class Plugins extends CodonModule   {
         $this->show('plugins/result');
         $this->show('plugins/footer');
     }
-    
+
     //send failure message to developer
     protected function send_message()   {
         $message = $this->post->message;
         $message .= '<br /><br />Additional Comments.<br /><br />';
         $message .= DB::escape($this->post->comments);
-        
+
         Util::SendEmail($this->post->to, $this->post->subject, $message, SITE_NAME, ADMIN_EMAIL);
         $this->show('plugins/header');
         $this->show('plugins/message_sent');
         $this->show('plugins/footer');
     }
-    
+
     //remove plugin from system
     public function uninstall($plugin)    {
-        
+
         $failure = FALSE;
         $messages = array();
-        
+
         $files = file('modules/Plugins/uploads/'.$plugin.'/uninstall.txt');
-        
+
         foreach($files as $file) {
             //check if it is a sql table and drop it if it is
             $sqltable = explode('*', $file);
@@ -371,7 +371,7 @@ class Plugins extends CodonModule   {
                 }
             }
         }
-        
+
         //remove the directories
         if(isset($directories)) {
             for($i = count($directories); $i > 0; $i--){
@@ -382,13 +382,13 @@ class Plugins extends CodonModule   {
                     $failmesages[] = 'Error Removing Folder '.trim($directories[$i-1]).' - Folder NOT empty.';
                 }
             }
-        }    
-        
+        }
+
         unlink('modules/Plugins/uploads/'.$plugin.'/uninstall.txt');
         $messages[] = 'Removed uninstall token';
         unlink('modules/Plugins/uploads/'.$plugin.'/installdate.txt');
         $messages[] = 'Removed install date token';
-        
+
         if($failure == TRUE)($this->set('failmessages', $failmessages));
         if(isset($tables)){$this->set('sqltables', $tables);}
         $this->set('messages', $messages);
@@ -396,15 +396,15 @@ class Plugins extends CodonModule   {
         $this->show('plugins/uninstall');
         $this->show('plugins/footer');
     }
-    
+
     public function force_new_listing() {
         $this->get_new_listing();
         $this->set('message', '<div id="success">New Plugin Listing Downloaded.</div>');
         $this->uploaded();
     }
-    
+
     public function get_new_listing()   {
-        
+
         //check for template extension type
         $TemplateExtension = new TemplateSet();
         if($TemplateExtension->tpl_ext == 'php') {
@@ -413,9 +413,9 @@ class Plugins extends CodonModule   {
         else    {
             $file = 'tpl_plugins.txt';
         }
-        
+
         $target_url = 'https://raw.github.com/DavidJClark/phpVMS-PluginsList/master/'.$file;
-        
+
         // make the cURL request
         $ch = curl_init();
         $fp = fopen("modules/Plugins/uploads/".$file, "w");
@@ -429,7 +429,7 @@ class Plugins extends CodonModule   {
         curl_exec($ch);
         fclose($fp);
     }
-    
+
     public function upload()    {
         //check for template extension type
         $TemplateExtension = new TemplateSet();
@@ -441,29 +441,29 @@ class Plugins extends CodonModule   {
             $this->set('phptemplate', FALSE);
             $file = 'tpl_plugins.txt';
         }
-        
+
         if(time()-filemtime('modules/Plugins/uploads/'.$file) > 604800)    {
             $this->get_new_listing();
         }
-        
+
         $filename = "modules/Plugins/uploads/".$file;
         $handle = fopen($filename, "rb");
         $lines = fread($handle, filesize($filename));
         fclose($handle);
-       
+
         $lines = explode("\n", $lines);
         foreach($lines as $line)    {
             $github[] = explode('+', $line);
         }
-        
+
         $this->set('github', $github);
         $this->show('plugins/header');
         $this->show('plugins/upload_form');
         $this->show('plugins/footer');
     }
-    
+
     public function github_file($key)   {
-        
+
         //check for template extension type
         $TemplateExtension = new TemplateSet();
         if($TemplateExtension->tpl_ext == 'php') {
@@ -472,30 +472,30 @@ class Plugins extends CodonModule   {
         else    {
             $file = 'tpl_plugins.txt';
         }
-        
-        
+
+
         $filename = "modules/Plugins/uploads/".$file;
         $handle = fopen($filename, "rb");
         $contents = fread($handle, filesize($filename));
         fclose($handle);
-       
+
         $lines = explode("\n", $contents);
         foreach($lines as $line)    {
             $github[] = explode('+', $line);
         }
         $url = $github[$key][0];
-        
+
             $target_url = 'https://github.com/'.$url;
             $userAgent = 'Googlebot/2.1 (http://www.googlebot.com/bot.html)';
             $file_zip = "newfile.zip";
 
             // make the cURL request to $target_url
             $ch = curl_init();
-            $fp = fopen("$file_zip", "w"); 
+            $fp = fopen("$file_zip", "w");
             curl_setopt($ch, CURLOPT_USERAGENT, $userAgent);
             curl_setopt($ch, CURLOPT_URL,$target_url);
             curl_setopt($ch, CURLOPT_FAILONERROR, true);
-            curl_setopt($ch, CURLOPT_HEADER,0); 
+            curl_setopt($ch, CURLOPT_HEADER,0);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
             curl_setopt($ch, CURLOPT_AUTOREFERER, true);
             curl_setopt($ch, CURLOPT_BINARYTRANSFER,true);
@@ -506,7 +506,7 @@ class Plugins extends CodonModule   {
             curl_exec($ch);
 
             fclose($fp);
-        
+
             $zip = new ZipArchive();
             $x = $zip->open($file_zip);
             //check if module already exists - do not allow it to be overwritten - use update function
@@ -523,28 +523,28 @@ class Plugins extends CodonModule   {
 
                     unlink($file_zip);
             }
-                    
+
         $this->show('plugins/header');
         $this->show('plugins/upload_success');
         $this->show('plugins/footer');
     }
-    
+
     protected function save_upload() {
 
        if($_FILES["zip_file"]["name"]) {
 	$filename = $_FILES["zip_file"]["name"];
 	$source = $_FILES["zip_file"]["tmp_name"];
 	$type = $_FILES["zip_file"]["type"];
- 
+
 	$name = explode(".", $filename);
 	$accepted_types = array('application/zip', 'application/x-zip-compressed', 'multipart/x-zip', 'application/x-compressed');
 	foreach($accepted_types as $mime_type) {
 		if($mime_type == $type) {
 			$okay = true;
 			break;
-		} 
+		}
 	}
- 
+
 	if(strtolower(substr($filename, -3)) != 'zip') {
             $this->show('plugins/header');
             $this->show('plugins/upload_badextension');
@@ -575,9 +575,9 @@ class Plugins extends CodonModule   {
                     $this->show('plugins/upload_success');
                     $this->show('plugins/footer');
                 }
-                else 
-                {	
-                    $this->show('plugins/header');    
+                else
+                {
+                    $this->show('plugins/header');
                     $this->show('plugins/upload_error');
                     $this->show('plugins/footer');
                 }
@@ -587,20 +587,20 @@ class Plugins extends CodonModule   {
         }
 
         }
-        
+
         public function delete($dir) {
             $directory = 'modules/Plugins/uploads/'.$dir.'/';
             $this->rrdir($directory);
             $this->index();
 
         }
-        
+
         public function dir_is_empty($dir) {
             if (!is_readable($dir)) return NULL;
             return (count(scandir($dir)) == 2);
         }
-        
-        public function rrdir($dir) { 
+
+        public function rrdir($dir) {
             if ($handle = opendir($dir))
                 {
                         $array = array();
@@ -659,7 +659,7 @@ class Plugins extends CodonModule   {
                     'tablename' => $tablename,
                     'sql' => $sql
                 );
-                
+
                 $tablename = '';
                 $sql = '';
             }
