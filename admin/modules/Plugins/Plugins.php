@@ -44,12 +44,12 @@ class Plugins extends CodonModule   {
         $plugins = array();
         $i = 1;
         while ($file = readdir($dirhandler)) {
-            $config[$i] = new stdClass();
             // if $file isn't this directory or its parent
             // add to the $files array
             if ($file != '.' && $file != '..' && $file != 'index.php'
                     && $file != 'plugins.txt' && $file != 'tpl_plugins.txt')
             {
+                $config[$i] = new stdClass();
                 if(file_exists('modules/Plugins/uploads/'.$file.'/config.txt'))
                 {
                     $info = file('modules/Plugins/uploads/'.$file.'/config.txt');
