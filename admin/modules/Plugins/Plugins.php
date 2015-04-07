@@ -44,6 +44,8 @@ class Plugins extends CodonModule   {
         $plugins = array();
         $i = 1;
         while ($file = readdir($dirhandler)) {
+        	//declare config variable - php 5.5+
+			$config[$i] = new stdClass();
             // if $file isn't this directory or its parent
             // add to the $files array
             if ($file != '.' && $file != '..' && $file != 'index.php'
