@@ -83,6 +83,8 @@ class Plugins extends CodonModule   {
     public function get_plugin($plugin) {
 
         $info = file('modules/Plugins/uploads/'.$plugin.'/config.txt');
+        //declare config variable - php 5.5+
+        $config = new stdClass();
         foreach($info as $line)
         {
             $data = explode('=', $line);
